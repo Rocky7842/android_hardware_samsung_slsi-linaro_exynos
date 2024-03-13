@@ -3557,6 +3557,8 @@ static int adev_set_mode(struct audio_hw_device *dev, audio_mode_t mode)
         proxy_set_audiomode(adev->proxy, (int)mode);
 
         if (adev->voice) {
+            bool new_proxy_call_status = false;
+
             if ((mode == AUDIO_MODE_NORMAL || mode == AUDIO_MODE_IN_COMMUNICATION) &&
                  voice_is_call_active(adev->voice)) {
                 /* Change from Voice Call Mode to Normal Mode */
@@ -3573,24 +3575,30 @@ static int adev_set_mode(struct audio_hw_device *dev, audio_mode_t mode)
                 update_call_stream(adev->primary_output, call_device, call_device);
                 pthread_mutex_lock(&adev->lock);
 
-                /* Changing Call Status */
+                /* Changing Voice Call Status */
                 voice_set_call_mode(adev->voice, false);
-
-                proxy_call_status(adev->proxy, false);
             } else if (mode == AUDIO_MODE_IN_CALL) {
                 /* Change from Normal/Ringtone Mode to Voice Call Mode */
                 /* We cannot start Voice Call right now because we don't know which device will be used.
                    So, we need to delay Voice Call start when get the routing information for Voice Call */
 
-                /* Changing Call Status */
+                /* Changing Voice Call Status */
                 voice_set_call_mode(adev->voice, true);
-
-                proxy_call_status(adev->proxy, true);
             }
 
-            if (mode == AUDIO_MODE_NORMAL || mode == AUDIO_MODE_IN_COMMUNICATION) {
-                proxy_call_status(adev->proxy, false);
+            /* Updating Call Status to proxy */
+            switch (mode) {
+                case AUDIO_MODE_NORMAL:
+                    new_proxy_call_status = false;
+                    break;
+                case AUDIO_MODE_IN_CALL:
+                case AUDIO_MODE_IN_COMMUNICATION:
+                    new_proxy_call_status = true;
+                    break;
+                default:
+                    break;
             }
+            proxy_call_status(adev->proxy, new_proxy_call_status);
 
             if(adev->previous_amode == AUDIO_MODE_IN_COMMUNICATION && mode == AUDIO_MODE_NORMAL){
                 if(adev->active_input && (adev->active_input->common.stream_status > STATUS_STANDBY) &&
