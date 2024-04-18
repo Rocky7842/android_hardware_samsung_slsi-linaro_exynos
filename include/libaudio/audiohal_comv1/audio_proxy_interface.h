@@ -158,6 +158,11 @@ bool proxy_is_bt_a2dp_ready(void);
 // Audio Device Proxy Dump Function
 int   proxy_fw_dump(int fd);
 
+// Audio device set playback pcm config
+bool proxy_select_best_playback_pcmconfig(void *proxy, void *cur_proxy_stream, int compr_upscaler);
+void proxy_set_best_playback_pcmconfig(void *proxy, void *proxy_stream);  //set best playback pcm config
+void proxy_reset_playback_pcmconfig(void *proxy);
+
 // Audio Device Proxy Creation/Destruction
 bool  proxy_is_initialized(void);
 void *proxy_init(void);

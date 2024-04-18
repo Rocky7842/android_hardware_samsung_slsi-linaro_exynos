@@ -899,6 +899,66 @@ static int get_active_capture_count(struct audio_device *adev)
     return active_count;
 }
 
+// Check whether Deep Stream is Active
+static bool is_deep_playback_active(struct audio_device *adev)
+{
+    bool deep_active = false;
+    struct listnode *node;
+    struct playback_stream *out_node;
+    struct stream_out *temp_out;
+
+    list_for_each(node, &adev->playback_list)
+    {
+        out_node = node_to_item(node, struct playback_stream, list_node);
+        if (out_node) {
+            temp_out = out_node->out;
+            if ((temp_out->common.stream_type == ASTREAM_PLAYBACK_DEEP_BUFFER) &&
+                (temp_out->common.stream_status > STATUS_STANDBY))
+                deep_active = true;
+        }
+    }
+
+    return deep_active;
+}
+
+// select best playback pcmconfig from active Streams
+static void select_best_playback_pcmconfig(
+    struct audio_device *adev,
+    struct stream_out *out,
+    bool opening_flag)
+{
+    struct listnode *node = NULL;
+    struct playback_stream *out_node = NULL;
+    struct stream_out *temp_out = NULL;
+    bool is_bestconfig = false;
+
+    /* reset playback pcm config before selecting best config from active streams */
+    proxy_reset_playback_pcmconfig(adev->proxy);
+
+    list_for_each(node, &adev->playback_list)
+    {
+        out_node = node_to_item(node, struct playback_stream, list_node);
+        if (out_node) {
+            temp_out = out_node->out;
+            if ((temp_out->common.stream_type != ASTREAM_PLAYBACK_AUX_DIGITAL) &&
+                (temp_out->common.stream_status > STATUS_STANDBY || (temp_out == out && opening_flag))) {
+                if (proxy_select_best_playback_pcmconfig(adev->proxy,
+                                    temp_out->common.proxy_stream,
+                                    0 /* default value */
+                                    ))
+                    is_bestconfig = true;
+            }
+        }
+    }
+
+    if (is_bestconfig) {
+        ALOGI("%s best playback config selected", __func__);
+        proxy_set_best_playback_pcmconfig(adev->proxy, temp_out->common.proxy_stream);
+    }
+
+    return;
+}
+
 void update_call_stream(struct stream_out *out, audio_devices_t current_devices, audio_devices_t new_devices)
 {
     struct audio_device *adev = out->adev;
@@ -1700,6 +1760,24 @@ static int out_standby(struct audio_stream *stream)
 
         // Have to unroute Audio Path after close PCM Device
         pthread_mutex_lock(&adev->lock);
+        /* check whether compress offload playback is active, when deep is entering standby
+         * or deep is active when compress offload is entering standby
+         * for skipping best pcmconfig selection and use previous config to avoid sound cut issues
+         * in active playback
+         */
+        if ((out->common.stream_type == ASTREAM_PLAYBACK_DEEP_BUFFER
+            && adev->compress_output && adev->compress_output->common.stream_status > STATUS_STANDBY)
+            || (out->common.stream_type == ASTREAM_PLAYBACK_COMPR_OFFLOAD
+            && is_deep_playback_active(adev))) {
+            ALOGI("%s-%s: skip selecting best pcmconfig, as %s active",
+                stream_table[out->common.stream_type], __func__,
+                (out->common.stream_type == ASTREAM_PLAYBACK_DEEP_BUFFER ?
+                "Compress offload" : "Deep playback"));
+        } else {
+            /* check for best playback pcmconfig */
+            select_best_playback_pcmconfig(adev, out, false);
+        }
+
         if (adev->is_playback_path_routed) {
             if (out->common.stream_type == ASTREAM_PLAYBACK_INCALL_MUSIC &&
                 adev->incallmusic_on && isCPCallMode(adev)) {
@@ -2227,6 +2305,9 @@ static ssize_t out_write(struct audio_stream_out *stream, const void* buffer, si
 #endif
             adev_set_route((void *)out, AUSAGE_PLAYBACK, ROUTE, NON_FORCE_ROUTE);
         }
+
+        /* check for best playback pcmconfig */
+        select_best_playback_pcmconfig(adev, out, true);
         pthread_mutex_unlock(&adev->lock);
 
 #if AUDIO_PLATFORM_ABOX_V1
@@ -2579,6 +2660,9 @@ static int out_create_mmap_buffer(const struct audio_stream_out *stream,
             ALOGI("%s-%s: try to route for playback", stream_table[out->common.stream_type], __func__);
             adev_set_route((void *)out, AUSAGE_PLAYBACK, ROUTE, NON_FORCE_ROUTE);
         }
+
+        /* check for best playback pcmconfig */
+        select_best_playback_pcmconfig(adev, out, true);
         pthread_mutex_unlock(&adev->lock);
 
         /* Opens stream & transit to Idle. */
