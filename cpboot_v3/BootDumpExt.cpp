@@ -354,6 +354,13 @@ int BootDumpExt::shannon_normal_boot()
 		cbd_info("ERR! std_boot_load_cp_image fail\n");
 		goto exit;
 	}
+
+	cbd_info("Register PCIE\n");
+	ret = std_boot_register_pcie();
+	if (ret < 0) {
+		cbd_info("ERR! std_boot_register_pcie fail\n");
+		goto exit;
+	}
 #endif
 	cbd_info("Load CP images\n");
 	ret = std_boot_load_cp_images();
@@ -401,6 +408,21 @@ int BootDumpExt::shannon_dump_boot()
 		goto exit;
 	}
 
+exit:
+	return ret;
+}
+
+int BootDumpExt::std_boot_register_pcie()
+{
+	int ret;
+	ret = ioctl(getStdBoot()->fds[FD_DEV], IOCTL_REGISTER_PCIE, NULL);
+	if (ret < 0) {
+		cbd_err("ERR! IOCTL_REGISTER_PCIE fail (%d)\n", ret);
+		ioctl(getStdBoot()->fds[FD_DEV], IOCTL_GET_CP_BOOTLOG, NULL);
+		goto exit;
+	}
+	ioctl(getStdBoot()->fds[FD_DEV], IOCTL_CLR_CP_BOOTLOG, NULL);
+	return 0;
 exit:
 	return ret;
 }

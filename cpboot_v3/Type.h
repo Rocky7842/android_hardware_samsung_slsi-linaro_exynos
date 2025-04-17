@@ -178,6 +178,7 @@ struct sec_info {
 };
 #define IOCTL_CHECK_SECURITY            _IO(IOCTL_MAGIC, 0x62)
 #define IOCTL_XMIT_BIN                  _IO(IOCTL_MAGIC, 0x63)
+#define IOCTL_REGISTER_PCIE             _IO(IOCTL_MAGIC, 0x65)
 
 #define CPDUMP_PATH		"/data/vendor/log/cbd"
 

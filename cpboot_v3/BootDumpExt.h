@@ -34,6 +34,7 @@ private:
 	bool prepare_boot_args(enum cp_boot_mode mode) override;
 	int std_boot_load_cp_bootloader();
 	int std_boot_load_cp_images();
+	int std_boot_register_pcie();
 
 	struct std_boot_args *getStdBoot() override;
 	struct std_dump_args *getStdDump() override;
