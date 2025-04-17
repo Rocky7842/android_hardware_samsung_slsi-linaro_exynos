@@ -304,6 +304,7 @@ struct modem_comp {
 	const char *rat;
 
 	char node_boot[MAX_NAME_LEN];
+	char node_download[MAX_NAME_LEN];
 	char *node_status;
 	char node_dump[MAX_NAME_LEN];
 	char path_bin[MAX_PATH_LEN];

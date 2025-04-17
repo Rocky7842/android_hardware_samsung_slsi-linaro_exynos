@@ -195,6 +195,7 @@ void BootDumpExt::setCbdArgs(char *name)
 	cbd_args->type = SEC_S5100;
 	/* ToDo: "nr" is for 2CP device, can use "umts" on 1CP device */
 	sprintf(cbd_args->cpn.node_boot, "/dev/nr_boot0");
+	sprintf(cbd_args->cpn.node_download, "/dev/modem_boot_spi");
 	sprintf(cbd_args->cpn.node_dump, "/dev/nr_ramdump0");
 #ifndef LEGACY_SIPC_IOCTL
 	sprintf(cbd_args->cpn.path_nv_data, "/mnt/vendor/efs/nv_nr_data.bin");
@@ -271,7 +272,9 @@ void BootDumpExt::build_std_dload_control()
 
 bool BootDumpExt::prepare_boot_args(enum cp_boot_mode mode)
 {
+	int dev_fd = -1;
 	u32 toc_count = 0;
+	struct modem_comp *cpn = &(Container::getCbdArgs()->cpn);
 
 	/* Prepare BOOT arguments */
 	if (!std_boot_prepare_args()) {
@@ -288,6 +291,15 @@ bool BootDumpExt::prepare_boot_args(enum cp_boot_mode mode)
 		std_boot.num_stages = toc_count;
 
 	cbd_info("num_stages: %d\n", std_boot.num_stages);
+
+	/* Open the boot device */
+	dev_fd = open(cpn->node_download, O_RDWR);
+	if (dev_fd < 0) {
+		cbd_err("ERR! DEV(%s) open fail\n", cpn->node_download);
+	} else {
+		cbd_info("DEV(%s) opened (fd %d)\n", cpn->node_download, dev_fd);
+		getStdBoot()->fds[FD_DOWNLOAD] = dev_fd;
+	}
 
 	/*
 	** Set standard DLOAD control parameters with SHANNON BOOT arguments
@@ -433,7 +445,7 @@ int BootDumpExt::std_boot_load_cp_bootloader()
 	}
 
 	/* Send BOOT loader */
-	ret = ioctl(std_boot.fds[FD_DEV], IOCTL_LOAD_CP_IMAGE, &img);
+	ret = ioctl(std_boot.fds[FD_DOWNLOAD], IOCTL_LOAD_CP_IMAGE, &img);
 	if (ret) {
 		cbd_err("ERR! IOCTL_LOAD_CP_IMAGE fail (%d)\n", ret);
 		goto exit;

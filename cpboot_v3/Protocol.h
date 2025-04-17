@@ -78,6 +78,7 @@ struct std_dload_control {
 enum filedesc_t {
 	/* BOOT & DUMP */
 	FD_DEV = 0,
+	FD_DOWNLOAD,
 
 	/* BOOT */
 	FD_BIN,
