@@ -306,27 +306,18 @@ int BootDumpExt::shannon_normal_boot()
 {
 	int ret;
 
-#ifndef LEGACY_SIPC_IOCTL
 	cbd_info("Power on CP\n");
 	ret = std_boot_power_on();
 	if (ret < 0) {
 		cbd_info("ERR! std_boot_power_on fail\n");
 		goto exit;
 	}
-#endif
 
+#ifndef LEGACY_SIPC_IOCTL
 	cbd_info("Load CP bootloader\n");
 	ret = std_boot_load_cp_bootloader();
 	if (ret < 0) {
 		cbd_info("ERR! std_boot_load_cp_image fail\n");
-		goto exit;
-	}
-
-#ifdef LEGACY_SIPC_IOCTL
-	cbd_info("Power on CP\n");
-	ret = std_boot_power_on();
-	if (ret < 0) {
-		cbd_info("ERR! std_boto_power_on fail\n");
 		goto exit;
 	}
 #endif
@@ -338,6 +329,20 @@ int BootDumpExt::shannon_normal_boot()
 		goto exit;
 	}
 
+#ifdef LEGACY_SIPC_IOCTL
+	ret = ioctl(getStdBoot()->fds[FD_DEV], IOCTL_MODEM_DL_START, NULL);
+	if (ret < 0) {
+		cbd_err("modem_request_security failed!!!\n");
+		goto exit;
+	}
+
+	cbd_info("Load CP bootloader\n");
+	ret = std_boot_load_cp_bootloader();
+	if (ret < 0) {
+		cbd_info("ERR! std_boot_load_cp_image fail\n");
+		goto exit;
+	}
+#endif
 	cbd_info("Load CP images\n");
 	ret = std_boot_load_cp_images();
 	if (ret < 0) {
