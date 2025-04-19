@@ -35,6 +35,7 @@ private:
 	int std_boot_load_cp_bootloader();
 	int std_boot_load_cp_images();
 	int std_boot_register_pcie();
+	int std_boot_normal_bootup_done();
 
 	struct std_boot_args *getStdBoot() override;
 	struct std_dump_args *getStdDump() override;

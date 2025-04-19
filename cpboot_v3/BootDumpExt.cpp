@@ -379,6 +379,13 @@ int BootDumpExt::shannon_normal_boot()
 		goto exit;
 	}
 
+	cbd_info("Done normal bootup\n");
+	ret = std_boot_normal_bootup_done();
+	if (ret < 0) {
+		cbd_info("ERR! std_boot_normal_bootup_done fail\n");
+		goto exit;
+	}
+
 exit:
 	return ret;
 }
@@ -423,6 +430,25 @@ int BootDumpExt::std_boot_register_pcie()
 	}
 	ioctl(getStdBoot()->fds[FD_DEV], IOCTL_CLR_CP_BOOTLOG, NULL);
 	return 0;
+exit:
+	return ret;
+}
+
+int BootDumpExt::std_boot_normal_bootup_done()
+{
+	int ret;
+
+	ret = ioctl(getStdBoot()->fds[FD_DEV], IOCTL_MODEM_BOOT_DONE, NULL);
+	if (ret < 0) {
+		cbd_err("ERR! IOCTL_MODEM_BOOT_DONE fail (%d)\n", ret);
+		ioctl(getStdBoot()->fds[FD_DEV], IOCTL_GET_CP_BOOTLOG, NULL);
+		goto exit;
+	}
+
+	ioctl(getStdBoot()->fds[FD_DEV], IOCTL_CLR_CP_BOOTLOG, NULL);
+
+	return 0;
+
 exit:
 	return ret;
 }
