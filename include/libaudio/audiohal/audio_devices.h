@@ -42,6 +42,12 @@ typedef enum {
     DEVICE_SPEAKER_DUAL,
     DEVICE_SPEAKER2,
 
+    // BT A2DP Offload playback devices
+#ifdef SUPPORT_BTA2DP_OFFLOAD
+    DEVICE_BT_A2DP_HEADPHONE,
+    DEVICE_SPEAKER_AND_BT_A2DP_HEADPHONE,
+#endif
+
     // Special Playback Devices
     DEVICE_CALL_FWD,
 
@@ -83,6 +89,7 @@ typedef enum {
     /* RX modifier */
     MODIFIER_BT_SCO_RX_NB = 0,
     MODIFIER_BT_SCO_RX_WB,
+    MODIFIER_BT_A2DP_PLAYBACK,
 
     /* TX modifier */
     MODIFIER_BT_SCO_TX_NB,

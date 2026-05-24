@@ -62,6 +62,9 @@ audio_cc_library_shared {
     }) + select(soong_config_variable("exynos_audio", "SUPPORT_STHAL_INTERFACE"), {
         true: ["-DSUPPORT_STHAL_INTERFACE"],
         default: [],
+    }) + select(soong_config_variable("exynos_audio", "SUPPORT_BTA2DP_OFFLOAD"), {
+        true: ["-DSUPPORT_BTA2DP_OFFLOAD"],
+        default: [],
     }),
 
     shared_libs: [

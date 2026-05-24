@@ -172,6 +172,12 @@ char * device_table[DEVICE_CNT] = {
     [DEVICE_SPEAKER_DUAL]           = "dual-speaker",
     [DEVICE_SPEAKER2]               = "speaker2",
 
+    // BT A2DP Offload playback devices
+#ifdef SUPPORT_BTA2DP_OFFLOAD
+    [DEVICE_BT_A2DP_HEADPHONE]              = "bt-a2dp-headphone",
+    [DEVICE_SPEAKER_AND_BT_A2DP_HEADPHONE]  = "speaker-bt-a2dp-headphone",
+#endif
+
     // Special Playback Devices
     [DEVICE_CALL_FWD]               = "",
 
@@ -209,6 +215,7 @@ char * modifier_table[MODIFIER_MAX] = {
     /* RX modifier */
     [MODIFIER_BT_SCO_RX_NB]  = "set-bt-sco-rx-rate-nb",
     [MODIFIER_BT_SCO_RX_WB]  = "set-bt-sco-rx-rate-wb",
+    [MODIFIER_BT_A2DP_PLAYBACK] = "set-bt-a2dp-playback",
 
     /* TX modifier */
     [MODIFIER_BT_SCO_TX_NB]  = "set-bt-sco-tx-rate-nb",
